@@ -1,0 +1,98 @@
+`pip install sqlalchemy`
+
+from sqlalchemy import *
+import datetime
+
+import mediacloud, json, datetime
+from config import API Key
+
+mc = mediacloud.api.MediaCloud('API Key')
+Obama_res = mc.sentenceCount('(Obama)', solr_filter=[mc.publish_date_query(datetime.date(2012, 9, 1), datetime.date(2012, 9, 30)) ])
+election_res = mc.sentenceCount('(election)', solr_filter=[mc.publish_date_query(datetime.date(2012, 9, 1), datetime.date(2012, 9, 30)) ])
+print(Obama_res['count']) 
+
+# add `echo=True` to see log statements of all the SQL that is generated
+engine = create_engine('sqlite:///:memory:',echo=True) # just save the db in memory for now (ie. not on disk)
+metadata = MetaData()
+# define a table to use
+queries = Table('queries', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('keywords', String(550), nullable=False),
+    Column('timestamp', DateTime, default=datetime.datetime.now),
+)
+metadata.create_all(engine) # and create the tables in the database
+
+insert_statement = queries.insert()
+str(insert_statement) # see an example of what this will do
+
+insert_statement = queries.insert().values(keywords="puppies")
+str(insert_statement)
+
+db_conn = engine.connect()
+result = db_conn.execute(insert_statement)
+result.inserted_primary_key # print out the primary key it was assigned
+
+insert_statement = queries.insert().values(keywords="kittens")
+result = db_conn.execute(insert_statement)
+result.inserted_primary_key # print out the primary key it was assigned
+
+from sqlalchemy.sql import select
+select_statement = select([queries])
+results = db_conn.execute(select_statement)
+for row in results:
+    print row
+    
+select_statement = select([queries]).where(queries.c.id==1)
+for row in db_conn.execute(select_statement):
+    print row
+    
+    select_statement = select([queries]).where(queries.c.keywords.like('p%'))
+for row in db_conn.execute(select_statement):
+    print row
+    
+    
+##to spit out the sum of the number of sentences for all the queries you ran that got saved in the db    
+for all quaries 
+    if saved in the database
+    print the sum of the number of sentences
+
+    
+    import datetime
+from sqlalchemy import *
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+Base = declarative_base()
+
+##add in some calls to the MediaCloud sentenceCount method and have them all saved into the queries table
+
+class Query(Base):
+    __tableforqueries__ = 'queries'
+    id = Column(Integer, primary_key=True)
+    keywords = Column(String(550))
+    timestamp = Column(DateTime,default=datetime.datetime.now)
+    def __repr__(self):
+        return "<Query(keywords='%s')>" % (self.keywords)
+Query.__table__
+
+engine = create_engine('sqlite:///:memory:') # just save the db in memory for now 
+Base.metadata.create_all(engine)
+Session = sessionmaker(bind=engine)
+my_session = Session()
+
+query = Query(keywords="iguana")
+query.keywords
+
+my_session.add(query)
+my_session.commit()
+query.id
+
+query1 = Query(keywords="robot")
+query2 = Query(keywords="puppy")
+my_session.add_all([query1,query2])
+my_session.commit()
+
+for q in my_session.query(Query).order_by(Query.timestamp):
+    print q
+    
+    for q in my_session.query(Query).filter(Query.keywords.like('r%')):
+    print q
